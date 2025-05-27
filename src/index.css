@@ -1,0 +1,42 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-primary: #FF6600;
+  --color-primary-dark: #E65C00;
+  --color-secondary: #FFB366;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+}
+
+.bg-primary {
+  background-color: var(--color-primary);
+}
+
+.bg-primary-dark {
+  background-color: var(--color-primary-dark);
+}
+
+.text-primary {
+  color: var(--color-primary);
+}
+
+.border-primary {
+  border-color: var(--color-primary);
+}
+
+.hover\:bg-primary-dark:hover {
+  background-color: var(--color-primary-dark);
+}
+
+.hover\:text-primary:hover {
+  color: var(--color-primary);
+}
+
+/* Asegúrate de que el contenido principal tenga un padding-top para evitar que el header fijo lo cubra */
+main {
+  padding-top: 64px; /* Ajusta este valor según la altura de tu header */
+}
