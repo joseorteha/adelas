@@ -11,6 +11,7 @@ import routeRoutes from './routes/route.routes';
 import busRoutes from './routes/bus.routes';
 import ticketRoutes from './routes/ticket.routes';
 import shipmentRoutes from './routes/shipment.routes';
+import locationRoutes from './routes/location.routes';
 
 // Configuración de variables de entorno
 dotenv.config();
@@ -34,6 +35,7 @@ app.use('/api/routes', routeRoutes);
 app.use('/api/buses', busRoutes);
 app.use('/api/tickets', ticketRoutes);
 app.use('/api/shipments', shipmentRoutes);
+app.use('/api/locations', locationRoutes);
 
 // Ruta de prueba
 app.get('/', (req, res) => {

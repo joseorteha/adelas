@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Clock, MapPin, Users } from 'lucide-react'
-import { TripInfo, SelectedTrip, Route } from '../types'
-import { routeService } from '../services/routeService'
+import { TripInfo, SelectedTrip } from '../types'
+import { routeService, Route } from '../services/routeService'
 
 const SearchResults: React.FC = () => {
   const navigate = useNavigate()
@@ -30,19 +30,15 @@ const SearchResults: React.FC = () => {
             const trips = convertRoutesToTrips(routes)
             setAvailableTrips(trips)
           } else {
-            // Si no hay rutas, crear algunos datos de respaldo
-            generateAvailableTrips(parsedTripInfo)
+            // No hay rutas disponibles para esta búsqueda
+            setAvailableTrips([])
           }
         }
         setError(null)
       } catch (err) {
         console.error('Error al buscar rutas:', err)
         setError('Error al cargar las rutas disponibles')
-        
-        // En caso de error, usamos los datos de respaldo
-        if (tripInfo) {
-          generateAvailableTrips(tripInfo)
-        }
+        setAvailableTrips([])
       } finally {
         setLoading(false)
       }
@@ -61,11 +57,11 @@ const SearchResults: React.FC = () => {
         ? `${durationHours}h ${durationMinutes > 0 ? durationMinutes + 'm' : ''}` 
         : `${durationMinutes}m`
       
-      // Determinar tipo de servicio basado en la distancia (solo ejemplo)
-      const serviceType = route.distance > 30 ? 'Rápido' : 'Ordinario'
+      // Usar el tipo de servicio de la ruta o valor por defecto
+      const serviceType = route.serviceType || 'Ordinario'
       
       // Generar asientos disponibles aleatoriamente (esto debería venir del backend)
-      const seats = generateRandomSeats()
+      const seats = generateSeatsEstimate()
       
       return {
         id: route._id,
@@ -80,50 +76,27 @@ const SearchResults: React.FC = () => {
     })
   }
   
-  const generateRandomSeats = () => {
-    return Math.floor(Math.random() * 20) + 25 // Genera un número aleatorio entre 25 y 44
+  // Generamos un número aproximado de asientos disponibles en lugar de valores reales
+  // Nota: En una implementación real, esto vendría del backend
+  const generateSeatsEstimate = () => {
+    return Math.floor(Math.random() * 20) + 25
   }
 
-  const generateAvailableTrips = (info: TripInfo) => {
-    const { origin, destination, date } = info
-    const route = `${origin}-${destination}`
-    const trips: SelectedTrip[] = []
-
-    const isWeekend = new Date(date).getDay() === 0 || new Date(date).getDay() === 6
-
-    if (route === 'Zongolica-Orizaba' || route === 'Orizaba-Zongolica') {
-      if (isWeekend) {
-        trips.push(
-          { id: 1, company: 'Adelas', departure: '07:00', arrival: '09:00', duration: '2h', price: 45, seats: generateRandomSeats(), serviceType: 'Ordinario' },
-          { id: 2, company: 'Adelas', departure: '07:30', arrival: '09:00', duration: '1h 30m', price: 50, seats: generateRandomSeats(), serviceType: 'Rápido' },
-          { id: 3, company: 'Adelas', departure: '08:00', arrival: '09:15', duration: '1h 15m', price: 55, seats: generateRandomSeats(), serviceType: 'Directo' }
-        )
-      } else {
-        trips.push(
-          { id: 1, company: 'Adelas', departure: '07:00', arrival: '09:00', duration: '2h', price: 40, seats: generateRandomSeats(), serviceType: 'Ordinario' },
-          { id: 2, company: 'Adelas', departure: '07:30', arrival: '09:00', duration: '1h 30m', price: 45, seats: generateRandomSeats(), serviceType: 'Rápido' },
-          { id: 3, company: 'Adelas', departure: '08:00', arrival: '09:15', duration: '1h 15m', price: 50, seats: generateRandomSeats(), serviceType: 'Directo' }
-        )
-      }
-    } else {
-      // Generar viajes genéricos para otras rutas
-      if (isWeekend) {
-        trips.push(
-          { id: 1, company: 'Adelas', departure: '08:00', arrival: '10:00', duration: '2h', price: 55, seats: generateRandomSeats(), serviceType: 'Ordinario' },
-          { id: 2, company: 'Adelas', departure: '09:00', arrival: '10:30', duration: '1h 30m', price: 65, seats: generateRandomSeats(), serviceType: 'Rápido' }
-        )
-      } else {
-        trips.push(
-          { id: 1, company: 'Adelas', departure: '08:00', arrival: '10:00', duration: '2h', price: 50, seats: generateRandomSeats(), serviceType: 'Ordinario' },
-          { id: 2, company: 'Adelas', departure: '09:00', arrival: '10:30', duration: '1h 30m', price: 60, seats: generateRandomSeats(), serviceType: 'Rápido' }
-        )
-      }
-    }
-
-    setAvailableTrips(trips)
-  }
-
+  // Verificar si el usuario está autenticado antes de seleccionar un viaje
   const handleSelectTrip = (trip: SelectedTrip) => {
+    // Verificar si hay un token de autenticación
+    const token = localStorage.getItem('authToken')
+    
+    if (!token) {
+      // Si no hay token, redirigir a inicio de sesión
+      alert('Debe iniciar sesión para continuar con la compra')
+      // Guardar el viaje seleccionado para recuperarlo después del login
+      localStorage.setItem('pendingTrip', JSON.stringify(trip))
+      navigate('/login?redirect=seat-selection')
+      return
+    }
+    
+    // Si hay token, continuar normalmente
     localStorage.setItem('selectedTrip', JSON.stringify(trip))
     navigate('/seat-selection')
   }

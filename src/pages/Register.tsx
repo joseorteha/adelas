@@ -1,7 +1,8 @@
 import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Bus, User, Mail, Lock, Calendar, Phone } from 'lucide-react'
+import { Bus, AlertCircle } from 'lucide-react'
 import { motion } from 'framer-motion'
+import authService from '../services/auth.service'
 
 const Register: React.FC = () => {
   const navigate = useNavigate()
@@ -20,26 +21,51 @@ const Register: React.FC = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value })
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    
+    // Validar que las contraseñas coinciden
     if (formData.password !== formData.confirmPassword) {
-      alert('Las contraseñas no coinciden')
-      return
+      setError('Las contraseñas no coinciden');
+      return;
     }
-    localStorage.setItem('user', JSON.stringify({
-      firstName: formData.firstName,
-      lastName: formData.lastName,
-      email: formData.email,
-      gender: formData.gender,
-      birthdate: formData.birthdate,
-      phone: formData.phone,
-    }))
-    localStorage.setItem('userCredentials', JSON.stringify({
-      email: formData.email,
-      password: formData.password,
-    }))
-    alert('Registro exitoso')
-    navigate('/login')
+    
+    // Mostrar indicador de carga
+    setIsLoading(true);
+    
+    try {
+      // Crear nombre completo
+      const name = `${formData.firstName} ${formData.lastName}`;
+      
+      // Registrar usuario a través del servicio de autenticación
+      await authService.register(
+        name,
+        formData.email,
+        formData.password
+      );
+      
+      // Guardar información adicional del usuario
+      localStorage.setItem('user', JSON.stringify({
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        gender: formData.gender,
+        birthdate: formData.birthdate,
+        phone: formData.phone,
+      }));
+      
+      // Redirigir al usuario a su perfil
+      navigate('/profile');
+    } catch (error: any) {
+      console.error('Error en el registro:', error);
+      setError(error.message || 'Error al crear la cuenta');
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   return (
@@ -208,14 +234,28 @@ const Register: React.FC = () => {
             </label>
           </div>
 
+          {error && (
+            <div className="rounded-md bg-red-50 p-4 my-4">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <AlertCircle className="h-5 w-5 text-red-400" aria-hidden="true" />
+                </div>
+                <div className="ml-3">
+                  <h3 className="text-sm font-medium text-red-800">{error}</h3>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div>
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               type="submit"
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
+              disabled={isLoading}
+              className={`group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white ${isLoading ? 'bg-orange-400 cursor-not-allowed' : 'bg-orange-600 hover:bg-orange-700'} focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500`}
             >
-              Registrar
+              {isLoading ? 'Procesando...' : 'Registrar'}
             </motion.button>
           </div>
         </form>

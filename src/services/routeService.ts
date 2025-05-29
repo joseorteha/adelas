@@ -7,6 +7,7 @@ export interface Route {
   distance: number;
   duration: number;
   price: number;
+  serviceType: 'Ordinario' | 'Rápido' | 'Directo';
   schedule: {
     departure: string;
     arrival: string;

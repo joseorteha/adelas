@@ -2,36 +2,76 @@ import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { User, Mail, Phone, Calendar, MapPin, Save, LogOut } from 'lucide-react'
 import { motion } from 'framer-motion'
-import { UserData } from '../types'
+
+// Definir la interfaz directamente aquí para evitar conflictos
+interface UserProfileData {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  birthdate: string;
+  address: string;
+}
 
 const Profile: React.FC = () => {
   const navigate = useNavigate()
-  const [userData, setUserData] = useState<UserData>({
+  // Inicializar el estado con valores por defecto
+  const [userData, setUserData] = useState<UserProfileData>({
     firstName: '',
     lastName: '',
     email: '',
     phone: '',
     birthdate: '',
-    address: '',
+    address: ''
   })
   const [isEditing, setIsEditing] = useState(false)
 
+  // Cargar datos del usuario solo al montar el componente
   useEffect(() => {
-    const isLoggedIn = localStorage.getItem('isLoggedIn')
-    if (!isLoggedIn) {
-      navigate('/login')
-      return
-    }
-
+    // Obtener nombre de usuario o email almacenado
+    const userName = localStorage.getItem('userName')
+    
+    // Intentar cargar datos existentes del usuario
     const storedUser = localStorage.getItem('user')
+    
     if (storedUser) {
-      setUserData(JSON.parse(storedUser))
+      try {
+        const parsedUser = JSON.parse(storedUser)
+        setUserData(parsedUser)
+      } catch (error) {
+        console.error('Error parsing user data:', error)
+        // Si hay error de parsing, usar datos default con nombre de usuario
+        if (userName) {
+          setUserData({
+            ...userData,
+            firstName: userName,
+            email: userName.includes('@') ? userName : `${userName}@example.com`
+          })
+        }
+      }
+    } else if (userName) {
+      // Si no hay datos guardados pero sí hay nombre de usuario
+      setUserData({
+        ...userData,
+        firstName: userName,
+        email: userName.includes('@') ? userName : `${userName}@example.com`
+      })
     }
-  }, [navigate])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // Solo ejecutar al montar el componente
 
   const handleLogout = () => {
-    localStorage.removeItem('isLoggedIn')
-    navigate('/login')
+    // Eliminar todos los tokens y datos de sesión
+    localStorage.removeItem('authToken')
+    localStorage.removeItem('userRole')
+    localStorage.removeItem('userName')
+    localStorage.removeItem('pendingTrip')
+    
+    // Crear un evento de storage para notificar a otros componentes
+    window.dispatchEvent(new Event('storage'))
+    
+    // Redirigir a la página de inicio
+    navigate('/')
   }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -43,8 +83,19 @@ const Profile: React.FC = () => {
   }
 
   const handleSave = () => {
+    // Guardar los datos del usuario en localStorage
     localStorage.setItem('user', JSON.stringify(userData))
+    
+    // Actualizar el nombre de usuario si cambió
+    if (userData.email) {
+      localStorage.setItem('userName', userData.email)
+    }
+    
+    // Desactivar el modo de edición
     setIsEditing(false)
+    
+    // Mostrar mensaje de éxito (opcional)
+    alert('Perfil actualizado con éxito')
   }
 
   return (

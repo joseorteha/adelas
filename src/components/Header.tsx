@@ -21,9 +21,25 @@ const Header: React.FC = () => {
   }, [])
 
   useEffect(() => {
-    const loggedIn = localStorage.getItem('isLoggedIn')
-    setIsLoggedIn(loggedIn === 'true')
-  }, [location])
+    // Verificar si el usuario está autenticado usando el nuevo sistema de tokens
+    const checkAuthStatus = () => {
+      const authToken = localStorage.getItem('authToken')
+      setIsLoggedIn(!!authToken)
+    }
+    
+    // Verificar al montar el componente y cuando cambie la ubicación
+    checkAuthStatus()
+    
+    // Agregar un event listener para localStorage changes
+    const handleStorageChange = () => {
+      checkAuthStatus()
+    }
+    
+    window.addEventListener('storage', handleStorageChange)
+    return () => {
+      window.removeEventListener('storage', handleStorageChange)
+    }
+  }, [])
 
   const getHeaderClass = () => {
     if (isHomePage) {
@@ -40,9 +56,20 @@ const Header: React.FC = () => {
   }
 
   const handleLogout = () => {
-    localStorage.removeItem('isLoggedIn')
+    // Eliminar todos los tokens y datos de sesión
+    localStorage.removeItem('authToken')
+    localStorage.removeItem('userRole')
+    localStorage.removeItem('userName')
+    localStorage.removeItem('pendingTrip')
+    
+    // Actualizar el estado
     setIsLoggedIn(false)
-    navigate('/login')
+    
+    // Crear un evento de storage para notificar a otros componentes
+    window.dispatchEvent(new Event('storage'))
+    
+    // Redirigir a la página de inicio
+    navigate('/')
   }
 
   const toggleMobileMenu = () => {

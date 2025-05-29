@@ -56,18 +56,13 @@ const Routes: React.FC = () => {
     }
   }
 
-  // Adaptador para transformar las rutas de la API al formato que necesitamos para mostrar
-  const formatRoutesForDisplay = (routes: Route[]) => {
-    return routes.map(route => ({
-      origin: route.origin,
-      destination: route.destination,
-      type: route.distance > 30 ? 'Rápido' : 'Ordinario', // Solo un ejemplo, esto debería venir del backend
-      price: route.price
-    }))
-  }
-  
-  // Calcular las rutas generales basadas en los datos reales
-  const generalRoutes = formatRoutesForDisplay(routes)
+  // Formatear las rutas para mostrar en la sección de rutas generales
+  const generalRoutes = routes.map(route => ({
+    origin: route.origin,
+    destination: route.destination,
+    type: route.serviceType || 'Ordinario', // Usamos el tipo de servicio real o un valor por defecto
+    price: route.price
+  }))
 
   if (loading) {
     return <div>Cargando rutas...</div>
@@ -94,9 +89,14 @@ const Routes: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {routes.map((route) => (
               <div key={route._id} className="border rounded-lg p-4 shadow-md">
-                <h2 className="text-xl font-semibold mb-2">
-                  {route.origin} → {route.destination}
-                </h2>
+                <div className="flex justify-between items-center mb-2">
+                  <h2 className="text-xl font-semibold">
+                    {route.origin} → {route.destination}
+                  </h2>
+                  <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getServiceTypeColor(route.serviceType)}`}>
+                    {route.serviceType}
+                  </span>
+                </div>
                 <div className="space-y-2">
                   <p><strong>Distancia:</strong> {route.distance} km</p>
                   <p><strong>Duración:</strong> {route.duration} minutos</p>

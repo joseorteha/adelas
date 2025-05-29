@@ -1,34 +1,78 @@
-import React, { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import React, { useState, useEffect } from 'react'
+import { useNavigate, Link, useLocation } from 'react-router-dom'
 import { Mail, Lock, Eye, EyeOff, Bus } from 'lucide-react'
 import { motion } from 'framer-motion'
+import authService from '../services/auth.service'
 
 const Login: React.FC = () => {
   const navigate = useNavigate()
+  const location = useLocation()
   const [formData, setFormData] = useState({
     email: '',
     password: '',
   })
   const [showPassword, setShowPassword] = useState(false)
+  const [error, setError] = useState('')
+  
+  // Extraer el parámetro de redirección de la URL si existe
+  useEffect(() => {
+    // Si ya hay un token de autenticación, redirigir al usuario
+    const authToken = localStorage.getItem('authToken')
+    if (authToken) {
+      const redirectPath = new URLSearchParams(location.search).get('redirect')
+      navigate(redirectPath ? `/${redirectPath}` : '/profile')
+    }
+  }, [location, navigate])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value })
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    const storedCredentials = localStorage.getItem('userCredentials')
-    if (storedCredentials) {
-      const { email, password } = JSON.parse(storedCredentials)
-      if (email === formData.email && password === formData.password) {
-        localStorage.setItem('isLoggedIn', 'true')
-        alert('Inicio de sesión exitoso')
-        navigate('/profile')
-      } else {
-        alert('Credenciales incorrectas')
+    setError('')
+    
+    // Mostrar indicador de carga
+    const loadingElement = document.createElement('div')
+    loadingElement.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50'
+    loadingElement.innerHTML = '<div class="bg-white p-5 rounded-lg shadow-lg"><p class="text-center">Iniciando sesión...</p></div>'
+    document.body.appendChild(loadingElement)
+    
+    try {
+      // Llamar al servicio de autenticación real
+      const response = await authService.login(formData.email, formData.password)
+      
+      // Si la autenticación fue exitosa
+      if (response.success) {
+        // Verificar rol y redireccionar
+        if (response.user.role === 'admin') {
+          navigate('/admin')
+          return
+        }
+        
+        // Para usuarios normales, verificar si hay una redirección pendiente
+        const redirectPath = new URLSearchParams(location.search).get('redirect')
+        const pendingTrip = localStorage.getItem('pendingTrip')
+        
+        if (redirectPath && pendingTrip) {
+          // Si hay un viaje pendiente, procesarlo
+          localStorage.setItem('selectedTrip', pendingTrip)
+          localStorage.removeItem('pendingTrip')
+          navigate(`/${redirectPath}`)
+        } else if (redirectPath) {
+          // Si solo hay redirección sin viaje pendiente
+          navigate(`/${redirectPath}`)
+        } else {
+          // Redirección predeterminada
+          navigate('/profile')
+        }
       }
-    } else {
-      alert('Usuario no encontrado')
+    } catch (error: any) {
+      console.error('Error en inicio de sesión:', error)
+      setError(error.message || 'Error en el inicio de sesión')
+    } finally {
+      // Remover indicador de carga
+      document.body.removeChild(loadingElement)
     }
   }
 
@@ -57,6 +101,12 @@ const Login: React.FC = () => {
           <p className="text-sm text-gray-600">Autobuses De la Sierra</p>
           <h2 className="text-2xl font-extrabold text-gray-900 mt-4">Iniciar Sesión</h2>
         </div>
+        
+        {error && (
+          <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+            {error}
+          </div>
+        )}
         <form className="space-y-6" onSubmit={handleSubmit}>
           <motion.div
             initial={{ x: -20, opacity: 0 }}

@@ -31,14 +31,9 @@ const Home: React.FC = () => {
         setLocations(data)
       } catch (error) {
         console.error('Error al cargar ubicaciones:', error)
-        // Datos de respaldo en caso de error
-        setLocations([
-          { name: 'Orizaba' },
-          { name: 'Zongolica' },
-          { name: 'Cuautlamanca' },
-          { name: 'Zacamilola' },
-          { name: 'Xoxocotla' }
-        ])
+        setLocations([])
+        // Mostrar alguna notificación al usuario en caso de necesitarlo
+        // Por ahora solo mostramos el error en la consola
       }
     }
 

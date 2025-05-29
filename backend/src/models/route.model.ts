@@ -6,6 +6,7 @@ export interface IRoute extends Document {
   distance: number;
   duration: number;
   price: number;
+  serviceType: 'Ordinario' | 'Rápido' | 'Directo';
   schedule: {
     departure: string;
     arrival: string;
@@ -39,6 +40,11 @@ const RouteSchema: Schema = new Schema({
     type: Number,
     required: [true, 'El precio es requerido']
   },
+  serviceType: {
+    type: String,
+    enum: ['Ordinario', 'Rápido', 'Directo'],
+    required: [true, 'El tipo de servicio es requerido']
+  },
   schedule: {
     departure: {
       type: String,
@@ -64,5 +70,6 @@ const RouteSchema: Schema = new Schema({
 // Índices para búsquedas frecuentes
 RouteSchema.index({ origin: 1, destination: 1 });
 RouteSchema.index({ active: 1 });
+RouteSchema.index({ serviceType: 1 });
 
 export default mongoose.model<IRoute>('Route', RouteSchema); 
